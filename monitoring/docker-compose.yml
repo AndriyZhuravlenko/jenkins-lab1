@@ -1,8 +1,5 @@
-version: '3.8'
-
-networks:
-  monitoring_network:
-    driver: bridge
+volumes:
+  j_data_5:
 
 services:
   prometheus:
@@ -13,8 +10,6 @@ services:
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
     ports:
       - "9090:9090"
-    networks:
-      - monitoring_network
 
   grafana:
     image: grafana/grafana:latest
@@ -22,15 +17,15 @@ services:
     restart: unless-stopped
     ports:
       - "3000:3000"
-    networks:
-      - monitoring_network
 
-  jenkins-new:
-    image: jenkins/jenkins:lts
-    container_name: jenkins_monitoring_target
-    restart: unless-stopped
+  jenkins:
+    build:
+      context: ../jenkins
+      dockerfile: Dockerfile
+    container_name: jenkins_auto_master
+    restart: always
     ports:
       - "8085:8080"
-      - "50005:50000"
-    networks:
-      - monitoring_network
+      - "50000:50000"
+    volumes:
+      - j_data_5:/var/jenkins_home
