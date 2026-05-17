@@ -1,0 +1,49 @@
+pipeline {
+    agent any
+
+    stages {
+        stage('Checkout') {
+            steps {
+                // Отримання свіжого коду з нашого локального Git
+                checkout scm
+            }
+        }
+
+        stage('Infrastructure Provisioning') {
+            steps {
+                dir('cicd-project') {
+                    sh 'terraform init'
+                    sh 'terraform apply -auto-approve'
+                    // Автоматично записуємо вихідний output у файл інвентаря Ansible
+                    sh 'echo "[all]" > inventory.ini'
+                    sh 'terraform output -raw server_ip >> inventory.ini'
+                    sh 'echo " ansible_connection=docker" >> inventory.ini'
+                }
+            }
+        }
+
+        stage('Configuration & Deploy') {
+            steps {
+                dir('cicd-project') {
+                    // Використовуємо надійний sh-виклиг замість застарілого плагіна ansiblePlaybook
+                    // Параметр ansible_ssh_extra_args вимикає перевірку ключів (StrictHostKeyChecking=no)
+                    sh 'ansible-playbook -i inventory.ini playbook.yml'
+                }
+            }
+        }
+    }
+
+    post {
+        failure {
+            label 'Handling Failures'
+            dir('cicd-project') {
+                echo 'Сценарій Ansible впав! Автоматично запускаємо очищення ресурсів...'
+                sh 'terraform destroy -auto-approve'
+            }
+        }
+        always {
+            echo 'Очищення робочої зони Jenkins.'
+            cleanWs()
+        }
+    }
+}

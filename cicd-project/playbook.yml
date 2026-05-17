@@ -1,0 +1,10 @@
+---
+- name: Ansible Auto Deploy via Jenkins
+  hosts: all
+  gather_facts: no
+  tasks:
+    - name: Update and install Nginx
+      raw: apt-get update && apt-get install -y nginx
+
+    - name: Force start nginx process
+      raw: nginx -g 'daemon on;'
