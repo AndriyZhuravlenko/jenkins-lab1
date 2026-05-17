@@ -2,7 +2,7 @@ pipeline {
     agent any
     
     environment {
-        DOCKERHUB_USER = 'ВАШ_ЛОГІН_DOCKERHUB'  // Заміни на свій логін DockerHub
+        DOCKERHUB_USER = 'zhuravlenko'  // Заміни на свій логін DockerHub
         REPO_NAME      = 'jenkins-lab'          // Назва репозиторію, яку ти створив на DockerHub
         CREDENTIALS_ID = 'dockerhub_pass'       // ID твоїх Credentials з Кроку 3 у Jenkins
     }
