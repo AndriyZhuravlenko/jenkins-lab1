@@ -6,7 +6,7 @@ pipeline {
     }
     
     environment {
-        DOCKERHUB_USER = 'ВАШ_ЛОГІН_DOCKERHUB' // Замініть на свій логін DockerHub
+        DOCKERHUB_USER = 'zhuravlenko' // Замініть на свій логін DockerHub
         REPO_NAME      = 'jenkins-lab'
         CREDENTIALS_ID = 'dockerhub_pass'
     }
