@@ -39,6 +39,12 @@ resource "docker_container" "app_node" {
     internal = 9100
     external = 9100
   }
+
+  # Прокидаємо Docker сокет для можливості керувати контейнерами через Ansible
+  volumes {
+    host_path      = "/var/run/docker.sock"
+    container_path = "/var/run/docker.sock"
+  }
 }
 
 # 2. Monitor Node (Сервер для Prometheus + Grafana)
@@ -62,5 +68,11 @@ resource "docker_container" "monitor_node" {
   ports {
     internal = 3000
     external = 3001
+  }
+
+  # Прокидаємо Docker сокет для можливості керувати контейнерами через Ansible
+  volumes {
+    host_path      = "/var/run/docker.sock"
+    container_path = "/var/run/docker.sock"
   }
 }
