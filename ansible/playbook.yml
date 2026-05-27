@@ -1,4 +1,4 @@
----
+k---
 - name: Configure Application Node
   hosts: app_node
   gather_facts: no
@@ -8,9 +8,6 @@
 
     - name: Ensure Nginx is running
       shell: service nginx start
-
-    - name: Kill any existing Node Exporter processes
-      shell: pkill -f prometheus-node-exporter || true
 
     - name: Ensure Node Exporter is running via nohup
       shell: nohup prometheus-node-exporter --web.listen-address="0.0.0.0:9100" > /var/log/node-exporter.log 2>&1 &
@@ -54,9 +51,6 @@
               static_configs:
                 - targets: ['lab8-app-node:9100']
 
-    - name: Kill any existing Prometheus or Grafana processes
-      shell: pkill -f prometheus || true; pkill -f grafana || true
-
     - name: Ensure Prometheus is running via nohup
       shell: nohup prometheus --config.file=/etc/prometheus/prometheus.yml --web.listen-address="0.0.0.0:9090" > /var/log/prometheus.log 2>&1 &
       async: 10
@@ -66,3 +60,4 @@
       shell: nohup grafana-server --config=/etc/grafana/grafana.ini --homepath=/usr/share/grafana web > /var/log/grafana.log 2>&1 &
       async: 10
       poll: 0
+
