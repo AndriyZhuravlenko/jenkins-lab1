@@ -58,16 +58,18 @@
         state: present
         update_cache: yes
 
+    # Змінено на /opt/prometheus, щоб уникнути конфлікту монтування через docker.sock
     - name: Create Prometheus configuration directory
       file:
-        path: /etc/prometheus
+        path: /opt/prometheus
         state: directory
         mode: '0755'
 
+    # Генеруємо конфігураційний файл у нову директорію
     - name: Generate Prometheus configuration from Jinja2 template
       template:
         src: templates/prometheus.yml.j2
-        dest: /etc/prometheus/prometheus.yml
+        dest: /opt/prometheus/prometheus.yml
         mode: '0644'
 
     - name: Run Prometheus container
@@ -76,8 +78,9 @@
         image: prom/prometheus:latest
         state: started
         restart_policy: always
+        # Важливо: монтуємо директорію цілком, щоб Docker-демон на хості коректно її підхопив
         volumes:
-          - /etc/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+          - /opt/prometheus:/etc/prometheus
         # Замість ports вказуємо мережу Terraform
         networks:
           - name: lab8_network
