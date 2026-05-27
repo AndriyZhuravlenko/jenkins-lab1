@@ -23,9 +23,8 @@
         image: prom/node-exporter:latest
         state: started
         restart_policy: always
-        # ПОРТ: зв'язуємо з портом 9100, який чекає Terraform
-        ports:
-          - "9100:9100"
+        # ПОРТИ ПРИБРАНО: контейнер слухає порт 9100 всередині, 
+        # а Terraform вже автоматично транслює його назовні.
         networks:
           - name: lab8_network
 
@@ -35,9 +34,8 @@
         image: nginx:latest
         state: started
         restart_policy: always
-        # ПОРТ: зв'язуємо порт 80 Nginx з портом 80 нашої "ВМ" (який Terraform транслює на 8084)
-        ports:
-          - "80:80"
+        # ПОРТИ ПРИБРАНО: Nginx працює на порту 80 за замовчуванням,
+        # який Terraform успішно мапить на 8084 хоста.
         networks:
           - name: lab8_network
 
@@ -81,9 +79,6 @@
         restart_policy: always
         volumes:
           - /opt/prometheus:/etc/prometheus
-        # ПОРТ: зв'язуємо з внутрішнім портом ноди
-        ports:
-          - "9090:9090"
         networks:
           - name: lab8_network
 
@@ -93,8 +88,5 @@
         image: grafana/grafana:latest
         state: started
         restart_policy: always
-        # ПОРТ: зв'язуємо з внутрішнім портом ноди
-        ports:
-          - "3000:3000"
         networks:
           - name: lab8_network
