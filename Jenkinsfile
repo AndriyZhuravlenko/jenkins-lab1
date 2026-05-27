@@ -21,22 +21,14 @@ pipeline {
             }
         }
 
-        stage('📝 STAGE 3: Dynamic Inventory Generation') {
+stage('📝 STAGE 3: Dynamic Inventory Generation') {
             steps {
                 script {
-                    // Витягуємо IP-адреси з outputs Terraform
-                    def appIp = sh(script: "cd terraform && terraform output -raw app_node_ip", returnStdout: true).trim()
-                    def monitorIp = sh(script: "cd terraform && terraform output -raw monitor_node_ip", returnStdout: true).trim()
-
-                    echo "Знайдено App Node IP: ${appIp}"
-                    echo "Знайдено Monitor Node IP: ${monitorIp}"
-
-                    // Створюємо динамічний інвентар для Ansible
+                    // Створюємо чистий динамічний інвентар для Ansible
                     def inventoryContent = """
 [all:vars]
 ansible_connection=docker
 ansible_user=root
-terraform_app_ip=${appIp}
 
 [app_node]
 lab8-app-node
@@ -49,7 +41,6 @@ lab8-monitor-node
                 }
             }
         }
-
         stage('🛠️ STAGE 4: Ansible Deployment') {
             steps {
                 dir('ansible') {

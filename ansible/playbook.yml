@@ -3,96 +3,37 @@
   hosts: app_node
   gather_facts: no
   tasks:
-    - name: Bootstrap python for Ansible
-      raw: apt-get update && apt-get install -y python3 python3-pip curl
+    - name: Update apt cache and install Nginx + Node Exporter
+      raw: apt-get update && apt-get install -y nginx prometheus-node-exporter curl
 
-    - name: Gather facts after bootstrap
-      setup:
+    - name: Ensure Nginx is running
+      shell: service nginx start
 
-    - name: Install Docker Engine components
-      apt:
-        name:
-          - docker.io
-          - docker-compose
-        state: present
-        update_cache: yes
-
-    - name: Run Node Exporter container
-      community.docker.docker_container:
-        name: node-exporter
-        image: prom/node-exporter:latest
-        state: started
-        restart_policy: always
-        # ПОРТИ НЕ ПИШЕМО: Terraform уже забронював порт 9100 на хості під app_node.
-        networks:
-          - name: lab8_network
-
-    - name: Run Web Application container (Nginx)
-      community.docker.docker_container:
-        name: web-app
-        image: nginx:latest
-        state: started
-        restart_policy: always
-        # ПУБЛІКУЄМО ПОРТ: Мапимо внутрішній порт 80, який Terraform перенаправляє на 8084 хоста.
-        ports:
-          - "80:80"
-        networks:
-          - name: lab8_network
+    - name: Ensure Node Exporter is running
+      shell: prometheus-node-exporter --web.listen-address=:9100 &
+      async: 10
+      poll: 0
 
 - name: Configure Monitoring Node
   hosts: monitor_node
   gather_facts: no
-  vars:
-    app_node_ip: "{{ hostvars['localhost']['terraform_app_ip'] }}"
   tasks:
-    - name: Bootstrap python for Ansible
-      raw: apt-get update && apt-get install -y python3 python3-pip curl
+    - name: Update apt cache and install Prometheus + Grafana
+      raw: apt-get update && apt-get install -y prometheus grafana curl
 
-    - name: Gather facts after bootstrap
-      setup:
+    - name: Create Prometheus config for Lab 8
+      copy:
+        dest: /etc/prometheus/prometheus.yml
+        content: |
+          global:
+            scrape_interval: 15s
+          scrape_configs:
+            - job_name: 'node_exporter'
+              static_configs:
+                - targets: ['lab8-app-node:9100']
 
-    - name: Install Docker Engine components
-      apt:
-        name:
-          - docker.io
-          - docker-compose
-        state: present
-        update_cache: yes
+    - name: Ensure Prometheus is running
+      shell: service prometheus restart
 
-    - name: Create Prometheus configuration directory
-      file:
-        path: /opt/prometheus
-        state: directory
-        mode: '0755'
-
-    - name: Generate Prometheus configuration from Jinja2 template
-      template:
-        src: templates/prometheus.yml.j2
-        dest: /opt/prometheus/prometheus.yml
-        mode: '0644'
-
-    - name: Run Prometheus container
-      community.docker.docker_container:
-        name: prometheus
-        image: prom/prometheus:latest
-        state: started
-        restart_policy: always
-        # ПУБЛІКУЄМО ПОРТ: Мапимо порт 9090, який Terraform чекає та перенаправляє на 9091 хоста.
-        ports:
-          - "9090:9090"
-        volumes:
-          - /opt/prometheus:/etc/prometheus
-        networks:
-          - name: lab8_network
-
-    - name: Run Grafana container
-      community.docker.docker_container:
-        name: grafana
-        image: grafana/grafana:latest
-        state: started
-        restart_policy: always
-        # ПУБЛІКУЄМО ПОРТ: Мапимо порт 3000, який Terraform перенаправляє на 3001 хоста.
-        ports:
-          - "3000:3000"
-        networks:
-          - name: lab8_network
+    - name: Ensure Grafana is running
+      shell: service grafana-server start
