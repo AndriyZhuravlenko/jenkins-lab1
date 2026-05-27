@@ -18,10 +18,25 @@
   hosts: monitor_node
   gather_facts: no
   tasks:
-    - name: Update apt cache and install Prometheus + Grafana
-      raw: apt-get update && apt-get install -y prometheus grafana curl
+    - name: Install prerequisites for Grafana
+      raw: apt-get update && apt-get install -y wget gnupg2 apt-transport-https software-properties-common curl
 
-    - name: Create Prometheus config for Lab 8
+    - name: Add Grafana GPG key
+      shell: |
+        mkdir -p /etc/apt/keyrings
+        wget -q -O - https://apt.grafana.com/gpg.key | gpg --dearmor --yes -o /etc/apt/keyrings/grafana.gpg
+
+    - name: Add Grafana repository
+      shell: |
+        echo "deb [signed-by=/etc/apt/keyrings/grafana.gpg] https://apt.grafana.com stable main" >> /etc/apt/sources.list
+
+    - name: Update apt and install Prometheus + Grafana
+      raw: apt-get update && apt-get install -y prometheus grafana
+
+    - name: Create Prometheus configuration directory
+      raw: mkdir -p /etc/prometheus
+
+    - name: Generate Prometheus configuration
       copy:
         dest: /etc/prometheus/prometheus.yml
         content: |
@@ -33,7 +48,11 @@
                 - targets: ['lab8-app-node:9100']
 
     - name: Ensure Prometheus is running
-      shell: service prometheus restart
+      shell: prometheus --config.file=/etc/prometheus/prometheus.yml &
+      async: 10
+      poll: 0
 
     - name: Ensure Grafana is running
-      shell: service grafana-server start
+      shell: cd /usr/share/grafana && grafana-server --config=/etc/grafana/grafana.ini --homepath=/usr/share/grafana &
+      async: 10
+      poll: 0
