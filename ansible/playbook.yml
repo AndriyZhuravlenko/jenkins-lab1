@@ -23,8 +23,7 @@
         image: prom/node-exporter:latest
         state: started
         restart_policy: always
-        # ПОРТИ ПРИБРАНО: контейнер слухає порт 9100 всередині, 
-        # а Terraform вже автоматично транслює його назовні.
+        # ПОРТИ НЕ ПИШЕМО: Terraform уже забронював порт 9100 на хості під app_node.
         networks:
           - name: lab8_network
 
@@ -34,8 +33,9 @@
         image: nginx:latest
         state: started
         restart_policy: always
-        # ПОРТИ ПРИБРАНО: Nginx працює на порту 80 за замовчуванням,
-        # який Terraform успішно мапить на 8084 хоста.
+        # ПУБЛІКУЄМО ПОРТ: Мапимо внутрішній порт 80, який Terraform перенаправляє на 8084 хоста.
+        ports:
+          - "80:80"
         networks:
           - name: lab8_network
 
@@ -77,6 +77,9 @@
         image: prom/prometheus:latest
         state: started
         restart_policy: always
+        # ПУБЛІКУЄМО ПОРТ: Мапимо порт 9090, який Terraform чекає та перенаправляє на 9091 хоста.
+        ports:
+          - "9090:9090"
         volumes:
           - /opt/prometheus:/etc/prometheus
         networks:
@@ -88,5 +91,8 @@
         image: grafana/grafana:latest
         state: started
         restart_policy: always
+        # ПУБЛІКУЄМО ПОРТ: Мапимо порт 3000, який Terraform перенаправляє на 3001 хоста.
+        ports:
+          - "3000:3000"
         networks:
           - name: lab8_network
