@@ -1,4 +1,4 @@
-k---
+---
 - name: Configure Application Node
   hosts: app_node
   gather_facts: no
