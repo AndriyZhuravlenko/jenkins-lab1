@@ -23,7 +23,9 @@
         image: prom/node-exporter:latest
         state: started
         restart_policy: always
-        # Замість ports вказуємо мережу Terraform
+        # ПОРТ: зв'язуємо з портом 9100, який чекає Terraform
+        ports:
+          - "9100:9100"
         networks:
           - name: lab8_network
 
@@ -33,7 +35,9 @@
         image: nginx:latest
         state: started
         restart_policy: always
-        # Замість ports вказуємо мережу Terraform
+        # ПОРТ: зв'язуємо порт 80 Nginx з портом 80 нашої "ВМ" (який Terraform транслює на 8084)
+        ports:
+          - "80:80"
         networks:
           - name: lab8_network
 
@@ -41,7 +45,6 @@
   hosts: monitor_node
   gather_facts: no
   vars:
-    # Цю змінну ми передамо через Jenkins з outputs Terraform
     app_node_ip: "{{ hostvars['localhost']['terraform_app_ip'] }}"
   tasks:
     - name: Bootstrap python for Ansible
@@ -58,14 +61,12 @@
         state: present
         update_cache: yes
 
-    # Змінено на /opt/prometheus, щоб уникнути конфлікту монтування через docker.sock
     - name: Create Prometheus configuration directory
       file:
         path: /opt/prometheus
         state: directory
         mode: '0755'
 
-    # Генеруємо конфігураційний файл у нову директорію
     - name: Generate Prometheus configuration from Jinja2 template
       template:
         src: templates/prometheus.yml.j2
@@ -78,10 +79,11 @@
         image: prom/prometheus:latest
         state: started
         restart_policy: always
-        # Важливо: монтуємо директорію цілком, щоб Docker-демон на хості коректно її підхопив
         volumes:
           - /opt/prometheus:/etc/prometheus
-        # Замість ports вказуємо мережу Terraform
+        # ПОРТ: зв'язуємо з внутрішнім портом ноди
+        ports:
+          - "9090:9090"
         networks:
           - name: lab8_network
 
@@ -91,6 +93,8 @@
         image: grafana/grafana:latest
         state: started
         restart_policy: always
-        # Замість ports вказуємо мережу Terraform
+        # ПОРТ: зв'язуємо з внутрішнім портом ноди
+        ports:
+          - "3000:3000"
         networks:
           - name: lab8_network
